@@ -92,7 +92,7 @@ services:
       - LOG_LEVEL=debug
       - TZ=Europe/Prague
     volumes:
-      - /mnt/storage/config/jellyseerr:/app/config
+      - /mnt/main_drive/jellyfiles/config/jellyseerr:/app/config
     restart: unless-stopped
     depends_on:
       gluetun:
@@ -106,9 +106,25 @@ services:
       - PGID=1000
       - TZ=Europe/Prague
     volumes:
-      - /mnt/storage/config/sonarr:/config
-      - /mnt/storage/media:/media
-      - /mnt/storage/incomplete:/incomplete
+      - /mnt/main_drive/jellyfiles/config/sonarr:/config
+      - /mnt/main_drive/jellyfiles/media:/media
+      - /mnt/main_drive/jellyfiles/incomplete:/incomplete
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    network_mode: service:gluetun
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Prague
+    volumes:
+      - /mnt/main_drive/jellyfiles/config/radarr:/config
+      - /mnt/main_drive/jellyfiles/incomplete:/incomplete
+      - /mnt/main_drive/jellyfiles/media:/media
     restart: unless-stopped
     depends_on:
       gluetun:
