@@ -1,0 +1,29 @@
+services:
+  nextcloud:
+    image: nextcloud
+    container_name: nextcloud
+    restart: unless-stopped
+    ports:
+      - "1212:80"
+    volumes:
+      - /mnt/main_drive/nextcloud:/var/www/html  # Update to use your desired path
+    environment:
+      - NEXTCLOUD_ADMIN_USER=admin
+      - NEXTCLOUD_ADMIN_PASSWORD=Ondra@Honus2006
+      - NEXTCLOUD_DATABASE_HOST=db
+    depends_on:
+      - db
+  db:
+    image: mariadb
+    container_name: nextcloud_db
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=Ondra@Honus2006
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=Ondra@Honus2006
+    volumes:
+      - /mnt/main_drive/nextcloud_db:/var/lib/mysql  # Update database data path to your external drive
+volumes:
+  nextcloud_data:
+  db_data:

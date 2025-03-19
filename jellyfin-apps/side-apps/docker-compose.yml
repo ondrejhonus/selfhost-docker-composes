@@ -1,0 +1,118 @@
+services:
+  gluetun:
+    container_name: gluetun
+    image: qmcgaw/gluetun
+    restart: unless-stopped
+    environment:
+      #- VPN_SERVICE_PROVIDER=mullvad
+      #- VPN_TYPE=wireguard
+      #- OPENVPN_USER=4344636457597020
+      #- WIREGUARD_PRIVATE_KEY=CDeTrAGCLF2D6Fc8mDqJzKI9zfuqCyrv78y+BdV6oXs=
+      #- WIREGUARD_ADDRESSES=10.69.93.252/32
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+      - SERVER_CITIES=Prague
+      - WIREGUARD_PRIVATE_KEY=wD941q0KtMiFC36QVXbGuW/3I7Yiqym5+euQCVgUlFc=
+      - WIREGUARD_ADDRESSES=10.2.0.2/32
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8081:8081
+      - 6881:6881
+      - 6881:6881/udp
+      - 9696:9696
+      - 8787:8787
+      - 3000:3000
+      - 9494:9494
+      - 5055:5055
+      - 7878:7878 # radarr
+      - 8989:8989 # sonarr
+      - 6969:6969
+      - 4545:4545 # requestrr
+      - 8686:8686 # lidarr
+    cap_add:
+      - NET_ADMIN
+    networks:
+      gluetun_network:
+  qbittorrent:
+    container_name: qbit
+    image: lscr.io/linuxserver/qbittorrent:libtorrentv1
+    restart: unless-stopped
+    network_mode: service:gluetun
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Prague
+      - WEBUI_PORT=8081
+      - TORRENTING_PORT=6881
+    volumes:
+      - /mnt/main_drive/jellyfiles/config/transmission:/config
+      - /mnt/main_drive/jellyfiles/incomplete:/incomplete
+      - /mnt/main_drive/jellyfiles/media:/media
+    depends_on:
+      gluetun:
+        condition: service_healthy
+  prowlarr:
+    container_name: prowlarrvpn
+    image: ghcr.io/hotio/prowlarr
+    restart: unless-stopped
+    network_mode: service:gluetun
+    environment:
+     - PUID=1000
+     - PGID=1000
+     - UMASK=002
+     - TZ=Etc/UTC
+    volumes:
+      - /mnt/main_drive/jellyfiles/config/prowlarr:/config
+    depends_on:
+      gluetun:
+        condition: service_healthy
+  lidarr:
+    image: ghcr.io/hotio/lidarr
+    network_mode: service:gluetun
+    container_name: lidarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=Europe/Prague
+    volumes:
+      - /mnt/main_drive/jellyfiles/config/lidarr:/config
+      - /mnt/main_drive/jellyfiles/media:/data
+      - /mnt/main_drive/jellyfiles/incomplete:/incomplete
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    network_mode: "service:gluetun"
+    container_name: jellyseerr
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=Europe/Prague
+    volumes:
+      - /mnt/storage/config/jellyseerr:/app/config
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    network_mode: "service:gluetun"
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Prague
+    volumes:
+      - /mnt/storage/config/sonarr:/config
+      - /mnt/storage/media:/media
+      - /mnt/storage/incomplete:/incomplete
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+networks:
+  gluetun_network:
+    external: true
